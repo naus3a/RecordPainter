@@ -5,7 +5,8 @@ const MOVE_THRESHOLD_MM = 1;
 const AppState = Object.freeze({
   NOT_CONNECTED: "not_connected",
   CONNECTED: "connected",
-  READY: "ready"
+  READY: "ready",
+  DRAWING: "drawing",
 });
 
 const axi = new axidraw.AxiDraw();
@@ -36,6 +37,7 @@ function setup(){
 function draw(){
   switch(appState){
     case AppState.READY:
+    case AppState.DRAWING:
       drawReady();
       break;
     case AppState.CONNECTED:
@@ -57,6 +59,27 @@ function mouseReleased(){
       break;
     case AppState.NOT_CONNECTED:
       connectAxi();
+      break;
+  }
+}
+
+function keyPressed(){
+
+}
+
+function keyReleased(){
+  switch(appState){
+    case AppState.READY:
+      if(key==='d'){
+        startDrawing();
+      }
+      break;
+    case AppState.DRAWING:
+      if(key==='d'){
+        preparePen();
+      }
+      break;
+    default:
       break;
   }
 }
@@ -150,4 +173,11 @@ function preparePen(){
       lastScreenPenPos = paperToScreen(paperStartPos.x, paperStartPos.y);
       console.log("READY");
     });
+}
+
+function startDrawing(){
+  axi.penDown();
+  penIsDown = true;
+  appState = AppState.DRAWING;
+  console.log("DRAWING");
 }
