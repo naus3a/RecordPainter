@@ -1,21 +1,27 @@
-/**
- * This example shows how to control the AxiDraw using the mouse.
- * Click the canvas to connect to the AxiDraw. Then click and drag to draw.
- * The AxiDraw will follow the position of the mouse.
- */
-
-const MAX_X_MM = 50;
-const MAX_Y_MM = 50;
+const MAX_X_MM = 400;
+const MAX_Y_MM = 400;
 const MOVE_THRESHOLD_MM = 1;
 
+const AppState = Object.freeze({
+  NOT_CONNECTED: "not_connected",
+  CONNECTED: "connected",
+  READY: "ready"
+});
+
 const axi = new axidraw.AxiDraw();
-let connected = false;
-let moving = false;
 let lastPos;
+let paperStartPos;
+let lastScreenPenPos;
+let appState = AppState.NOT_CONNECTED;
+let penIsDown = false;
 
-let lines = [];
+////
+//// 
+// p5
+////
+////
 
-function setup() {
+function setup(){
   createCanvas(400, 400);
 
   textAlign(CENTER);
@@ -24,98 +30,124 @@ function setup() {
   fill(0);
 
   lastPos = createVector(0, 0);
+  paperStartPos = createVector(200,200);
 }
 
-function mouseClicked() {
-  if (!connected) {
-    axi.connect().then(() => {
-      connected = true;
-    });
-
-    return;
+function draw(){
+  switch(appState){
+    case AppState.READY:
+      drawReady();
+      break;
+    case AppState.CONNECTED:
+      drawConnected();
+      break;
+    case AppState.NOT_CONNECTED:
+      drawDisconnected();
+      break;
   }
 }
 
-function mousePressed() {
-  drawing = true;
+function mousePressed(){
 
-  if (connected) {
-    axi.penDown();
+}
+
+function mouseReleased(){
+  switch(appState){
+    case AppState.CONNECTED:
+      break;
+    case AppState.NOT_CONNECTED:
+      connectAxi();
+      break;
   }
 }
 
-function mouseReleased() {
-  drawing = false;
+////
+////
+// draw
+////
+////
 
-  if (connected) {
-    axi.penUp();
-  }
+function drawConnected(){
+  background(255,255,0,255);
+  text("["+getSimulatorString()+"] CONNECTED\nPreparing pen", width/2,20);
 }
 
-function mmToPx(mmPos) {
+function drawDisconnected(){
+  background(255,0,0,2550);
+  text("["+getSimulatorString()+"] DISCONNECTED\nClick to connect", width/2,20);
+}
+
+function drawReady(){
+  background(255,255,255,255);
+  drawPen();
+}
+
+function drawPen(){
+  push();
+  if(penIsDown){
+    stroke(0,255,0,255);
+    fill(0,255,0,255);
+  }else{
+    stroke(255,0,0,255);
+    noFill();
+  }
+  ellipse(lastScreenPenPos.x, lastScreenPenPos.y, 10,10);
+  pop();
+}
+
+////
+////
+// utils
+////
+////
+
+function isSimulator(){
+  return window.AXIDRAW_SIMULATED;
+}
+
+function getSimulatorString(){
+  return isSimulator?"SIM":"DEVICE";
+}
+
+function screenToPaper(x, y){
   return createVector(
-    constrain(map(mmPos.x, 0, MAX_X_MM, 0, width), 0, width),
-    constrain(map(mmPos.y, 0, MAX_Y_MM, 0, height), 0, height),
+    map(x, 0, width, 0, MAX_X_MM),
+    map(y, 0, height, 0, MAX_Y_MM)
   );
 }
 
-function moveAndDraw(x, y) {
-  moving = true;
-  axi.moveTo(x, y)
-    .then(() => {
-      moving = false;
+function paperToScreen(x,y){
+  return createVector(
+    map(x, 0, MAX_X_MM, 0, width),
+    map(y, 0, MAX_Y_MM, 0, height)
+  );
+}
+
+////
+////
+// axi
+////
+////
+
+function connectAxi(){
+  axi.connect().then(() => {
+      appState = AppState.CONNECTED;
+      console.log("CONNECTED");
+      preparePen();
     });
-
-  if (!drawing) {
-    return;
-  }
-
-  lines.push([
-    mmToPx(lastPos),
-    mmToPx(createVector(x, y)),
-  ]);
 }
 
-function followMouse() {
-  const x = constrain(map(mouseX, 0, width, 0, MAX_X_MM), 0, MAX_X_MM);
-  const y = constrain(map(mouseY, 0, height, 0, MAX_Y_MM), 0, MAX_Y_MM);
-
-  const pxPos = mmToPx(createVector(x, y));
-
-  if (!drawing) {
-    // Draw a cursor
-    noStroke();
-    ellipse(pxPos.x, pxPos.y, 5, 5);
-  }
-
-  // Only send motion commands when the mouse has moved more than the threshold
-  // to reduce the number of commands sent to the AxiDraw
-  if (!moving && dist(lastPos.x, lastPos.y, x, y) > MOVE_THRESHOLD_MM) {
-    moveAndDraw(x, y);
-    lastPos = createVector(x, y);
-  }
-}
-
-function draw() {
-  const simSuffix = window.AXIDRAW_SIMULATED ? ' (simulated)' : '';
-
-  if (!connected) {
-    background(255, 0, 0);
-    text('Click to Connect' + simSuffix, width / 2, height / 2);
-    return;
-  }
-
-  background(0, 255, 0);
-
-  if (mouseX >= 0 && mouseX <= width && mouseY >= 0 && mouseY <= height) {
-    // Move the pen to the mouse position if it is inside the canvas
-    followMouse();
-  }
-
-  // Draw the lines
-  stroke(0);
-  strokeWeight(1);
-  for (let i = 0; i < lines.length; i += 1) {
-    line(lines[i][0].x, lines[i][0].y, lines[i][1].x, lines[i][1].y);
-  }
+////
+// position the pen over the start position on the border of the speaker
+// notice the pen is up/not drawing
+////
+function preparePen(){
+  axi.penUp();
+  penIsDown = false;
+  axi.moveTo(paperStartPos.x, paperStartPos.y)
+    .then(()=>{
+      appState = AppState.READY;
+      lastScreenPenPos = paperToScreen(paperStartPos.x, paperStartPos.y);
+      console.log("READY");
+    });
 }
