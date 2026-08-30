@@ -97,9 +97,11 @@ function followMouse() {
 }
 
 function draw() {
+  const simSuffix = window.AXIDRAW_SIMULATED ? ' (simulated)' : '';
+
   if (!connected) {
     background(255, 0, 0);
-    text('Click to Connect', width / 2, height / 2);
+    text('Click to Connect' + simSuffix, width / 2, height / 2);
     return;
   }
 

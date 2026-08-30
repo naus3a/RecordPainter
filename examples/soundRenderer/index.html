@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+
+  <script>
+    // Toggle this to run against a simulated AxiDraw (no hardware/Web
+    // Serial needed) instead of the real library.
+    const SIMULATE_AXIDRAW = true;
+
+    window.AXIDRAW_SIMULATED = SIMULATE_AXIDRAW;
+    document.write(
+      `<script src="../../libs/${SIMULATE_AXIDRAW ? 'p5.axidraw.sim.js' : 'p5.axidraw.js'}"><\/script>`
+    );
+  </script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
+  <script src="../../libs/DeeDeeLib.js"></script>
+
+  <style>
+      html, body {
+          margin: 0;
+          padding: 0;
+      }
+      canvas {
+          display: block;
+      }
+      #audio-tuning-panel {
+          position: fixed;
+          top: 10px;
+          right: 10px;
+          width: 220px;
+          padding: 8px 10px;
+          background: rgba(255, 255, 255, 0.9);
+          border: 1px solid #ccc;
+          font-family: sans-serif;
+          font-size: 12px;
+      }
+      #audio-tuning-panel h4 {
+          margin: 0 0 6px;
+      }
+      #audio-tuning-panel .tuning-row {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          margin-bottom: 4px;
+      }
+      #audio-tuning-panel .tuning-label {
+          flex: 1;
+      }
+      #audio-tuning-panel .tuning-value {
+          width: 34px;
+          text-align: right;
+      }
+      #audio-tuning-panel input[type="range"] {
+          flex: 1;
+          width: auto;
+      }
+  </style>
+</head>
+<body>
+<main>
+</main>
+<script src="sketch.js"></script>
+</body>
+</html>

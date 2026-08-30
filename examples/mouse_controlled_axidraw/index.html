@@ -3,7 +3,16 @@
 <head>
   <meta charset="utf-8" />
 
-  <script src="../libs/p5.axidraw.js"></script>
+  <script>
+    // Toggle this to run against a simulated AxiDraw (no hardware/Web
+    // Serial needed) instead of the real library.
+    const SIMULATE_AXIDRAW = true;
+
+    window.AXIDRAW_SIMULATED = SIMULATE_AXIDRAW;
+    document.write(
+      `<script src="../../libs/${SIMULATE_AXIDRAW ? 'p5.axidraw.sim.js' : 'p5.axidraw.js'}"><\/script>`
+    );
+  </script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
 
