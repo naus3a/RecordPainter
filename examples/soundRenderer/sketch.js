@@ -3,6 +3,35 @@ const MAX_Y_MM = 400;
 const MOVE_THRESHOLD_MM = 1;
 const BEAT_FLASH_MS = 150;
 
+// All the pitch/beat -> movement mapping knobs, live-tunable from the
+// slider panel built in setupAudioTuningUI(). `value` is just each
+// slider's starting point; read the current value at AudioMotionTuning.<key>.value.
+const AudioMotionTuning = {
+  yAmplitudeMm: {
+    value: 60, min: 0, max: 150, step: 1,
+    label: 'Pitch Y amplitude (mm)', // how far up/down a pitch of 0/1 pushes the pen, from paperStartPos.y
+  },
+  sampleIntervalMs: {
+    value: 250, min: 50, max: 1000, step: 10,
+    // How often we sample dd.pitch for a new move. audioPenMoving still
+    // guards against ever queueing a move on top of one still in flight,
+    // regardless of how low this is set.
+    label: 'Sample interval (ms)',
+  },
+  beatKickMm: {
+    value: 30, min: 0, max: 100, step: 1,
+    label: 'Beat X kick (mm)', // how far sideways each beat kicks the pen, from paperStartPos.x
+  },
+  xMaxMm: {
+    value: 60, min: 0, max: 150, step: 1,
+    label: 'Beat X max offset (mm)', // caps total sideways offset so fast beats can't push it off the paper
+  },
+  xRecenterDecay: {
+    value: 0.8, min: 0, max: 0.99, step: 0.01,
+    label: 'X recenter decay', // per-sample pull back toward 0; smaller = snappier, closer to 1 = lazier
+  },
+};
+
 const AppState = Object.freeze({
   NOT_CONNECTED: "not_connected",
   CONNECTED: "connected",
@@ -25,6 +54,9 @@ let audioDeviceSelect;
 let audioConnectButton;
 let audioStatusP;
 let lastBeatAt = -Infinity;
+let audioPenMoving = false;
+let lastAudioSampleAt = -Infinity;
+let audioXOffset = 0;
 
 ////
 //// 
@@ -44,12 +76,16 @@ function setup(){
   paperStartPos = createVector(200,200);
 
   setupAudioUI();
+  setupAudioTuningUI();
 }
 
 function draw(){
   switch(appState){
-    case AppState.READY:
     case AppState.DRAWING:
+      updateAudioPenMotion();
+      drawReady();
+      break;
+    case AppState.READY:
       drawReady();
       break;
     case AppState.CONNECTED:
@@ -265,6 +301,60 @@ async function enableMicrophone(){
   }
 }
 
+// Called every frame while appState is DRAWING. Samples dd.pitch on an
+// interval and nudges the pen up/down around paperStartPos.y to match it,
+// while audioXOffset (kicked sideways by onBeat, decayed back toward 0
+// here) pulls it back and forth on X. Both offsets stack on top of the
+// same paperStartPos center, so the pen is always "attracted" back to it.
+// audioPenMoving guards against sending a new moveTo before AxiDraw has
+// finished the previous one, so the command queue can't run away from us
+// no matter how low AudioMotionTuning.sampleIntervalMs is set.
+function updateAudioPenMotion(){
+  if(!audioConnected || !dd) return;
+  if(audioPenMoving) return;
+  if(millis() - lastAudioSampleAt < AudioMotionTuning.sampleIntervalMs.value) return;
+
+  lastAudioSampleAt = millis();
+
+  audioXOffset *= AudioMotionTuning.xRecenterDecay.value;
+
+  const yAmplitudeMm = AudioMotionTuning.yAmplitudeMm.value;
+  const targetX = constrain(paperStartPos.x + audioXOffset, 0, MAX_X_MM);
+  const targetY = constrain(
+    paperStartPos.y + map(dd.pitch, 0, 1, -yAmplitudeMm, yAmplitudeMm),
+    0, MAX_Y_MM
+  );
+
+  audioPenMoving = true;
+  axi.moveTo(targetX, targetY)
+    .then(() => {
+      audioPenMoving = false;
+    });
+
+  // Reflect the new target on screen right away; the physical pen catches
+  // up asynchronously, same as the axi.moveTo() call above.
+  lastScreenPenPos = paperToScreen(targetX, targetY);
+}
+
+// Builds one labeled slider per AudioMotionTuning entry, wired to update
+// that entry's `.value` (and its own readout) live as it's dragged.
+function setupAudioTuningUI(){
+  const panel = createDiv().id('audio-tuning-panel');
+  createElement('h4', 'Motion tuning').parent(panel);
+
+  Object.values(AudioMotionTuning).forEach(cfg => {
+    const row = createDiv().addClass('tuning-row').parent(panel);
+    createSpan(cfg.label).addClass('tuning-label').parent(row);
+    const valueSpan = createSpan(cfg.value).addClass('tuning-value').parent(row);
+    const slider = createSlider(cfg.min, cfg.max, cfg.value, cfg.step).parent(row);
+
+    slider.input(() => {
+      cfg.value = slider.value();
+      valueSpan.html(cfg.value);
+    });
+  });
+}
+
 function connectAudio(){
   const deviceId = audioDeviceSelect.value();
   const device = audioDevices.find(d => d.deviceId === deviceId);
@@ -275,6 +365,8 @@ function connectAudio(){
   dd = new DeeDeeLib();
   dd.onBeat(() => {
     lastBeatAt = millis();
+    const { beatKickMm, xMaxMm } = AudioMotionTuning;
+    audioXOffset = constrain(audioXOffset + beatKickMm.value, -xMaxMm.value, xMaxMm.value);
   });
   dd.connect(deviceId)
     .then(() => {
