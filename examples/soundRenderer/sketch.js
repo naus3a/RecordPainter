@@ -1,6 +1,7 @@
 const MAX_X_MM = 400;
 const MAX_Y_MM = 400;
 const MOVE_THRESHOLD_MM = 1;
+const BEAT_FLASH_MS = 150;
 
 const AppState = Object.freeze({
   NOT_CONNECTED: "not_connected",
@@ -15,6 +16,15 @@ let paperStartPos;
 let lastScreenPenPos;
 let appState = AppState.NOT_CONNECTED;
 let penIsDown = false;
+
+let dd = null;
+let audioConnected = false;
+let audioDevices = [];
+let audioEnableButton;
+let audioDeviceSelect;
+let audioConnectButton;
+let audioStatusP;
+let lastBeatAt = -Infinity;
 
 ////
 //// 
@@ -32,6 +42,8 @@ function setup(){
 
   lastPos = createVector(0, 0);
   paperStartPos = createVector(200,200);
+
+  setupAudioUI();
 }
 
 function draw(){
@@ -47,6 +59,7 @@ function draw(){
       drawDisconnected();
       break;
   }
+  drawAudioMeter();
 }
 
 function mousePressed(){
@@ -118,6 +131,30 @@ function drawPen(){
   pop();
 }
 
+// Small live meters in the bottom-left corner, just to confirm audio is
+// actually flowing into DeeDeeLib once an input is connected: energy,
+// pitch, and a brief flash whenever a 'beat' event fires.
+function drawAudioMeter(){
+  if(!audioConnected || !dd) return;
+  push();
+  noStroke();
+
+  fill(0,150,255);
+  const energyHeight = dd.energy * 200;
+  rect(10, height - 10 - energyHeight, 20, energyHeight);
+
+  fill(255,150,0);
+  const pitchHeight = dd.pitch * 200;
+  rect(40, height - 10 - pitchHeight, 20, pitchHeight);
+
+  if(millis() - lastBeatAt < BEAT_FLASH_MS){
+    fill(255,0,150);
+    rect(70, height - 30, 20, 20);
+  }
+
+  pop();
+}
+
 ////
 ////
 // utils
@@ -180,4 +217,72 @@ function startDrawing(){
   penIsDown = true;
   appState = AppState.DRAWING;
   console.log("DRAWING");
+}
+
+////
+////
+// audio (DeeDeeLib)
+////
+////
+
+function setupAudioUI(){
+  audioStatusP = createP('Audio: not connected');
+
+  audioEnableButton = createButton('Enable Microphone');
+  audioEnableButton.mousePressed(enableMicrophone);
+
+  audioDeviceSelect = createSelect();
+  audioDeviceSelect.option('(enable microphone first)');
+  audioDeviceSelect.attribute('disabled', '');
+
+  audioConnectButton = createButton('Connect Audio');
+  audioConnectButton.attribute('disabled', '');
+  audioConnectButton.mousePressed(connectAudio);
+}
+
+// Browsers only report input device labels/ids once mic permission has
+// been granted, so this makes a throwaway getUserMedia call just to
+// unlock them, then lists the real devices for the dropdown.
+async function enableMicrophone(){
+  audioStatusP.html('Audio: requesting microphone permission...');
+  try {
+    const tempStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    tempStream.getTracks().forEach(track => track.stop());
+
+    audioDevices = await DeeDeeLib.listInputDevices();
+
+    audioDeviceSelect.html('');
+    audioDevices.forEach((device, i) => {
+      audioDeviceSelect.option(device.label || `Input ${i + 1}`, device.deviceId);
+    });
+    audioDeviceSelect.removeAttribute('disabled');
+    audioConnectButton.removeAttribute('disabled');
+
+    audioStatusP.html('Audio: choose an input and click Connect');
+  } catch (err) {
+    console.error(err);
+    audioStatusP.html('Audio: microphone permission denied');
+  }
+}
+
+function connectAudio(){
+  const deviceId = audioDeviceSelect.value();
+  const device = audioDevices.find(d => d.deviceId === deviceId);
+  const label = device ? (device.label || 'Unnamed input') : 'default input';
+
+  audioStatusP.html('Audio: connecting...');
+
+  dd = new DeeDeeLib();
+  dd.onBeat(() => {
+    lastBeatAt = millis();
+  });
+  dd.connect(deviceId)
+    .then(() => {
+      audioConnected = true;
+      audioStatusP.html(`Audio: connected (${label})`);
+    })
+    .catch(err => {
+      console.error(err);
+      audioStatusP.html('Audio: connection failed');
+    });
 }
