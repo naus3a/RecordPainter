@@ -13,6 +13,12 @@ if (typeof MachineConfig === "undefined") {
 const MOVE_THRESHOLD_MM = 1;
 const BEAT_FLASH_MS = 150;
 
+// Audio meter appearance only — scrolling energy/pitch trace width in px
+// (1 sample per pixel column) and box height. Purely cosmetic.
+const METER_WIDTH = 340;
+const METER_HEIGHT = 36;
+const METER_HISTORY_LENGTH = METER_WIDTH;
+
 const BEAT_PEN_MIN_MS = 40;
 const BEAT_PEN_MAX_MS = 180;
 const BEAT_ENERGY_MAX = 0.20;
@@ -138,6 +144,11 @@ let audioDeviceSelect;
 let audioConnectButton;
 let audioStatusP;
 let lastBeatAt = -Infinity;
+
+// Rolling sample history for the scrolling energy/pitch meters.
+// Display-only — nothing else reads these.
+let energyHistory = [];
+let pitchHistory = [];
 
 let audioPenMoving = false;
 let lastAudioSampleAt = -Infinity;
@@ -446,47 +457,88 @@ function drawPen() {
 // Cyan = energy
 // Amber = pitch
 // Magenta = beat
+//
+// Both meters are scrolling oscilloscope-style traces: each frame's
+// dd.energy/dd.pitch sample is pushed onto a rolling history buffer
+// (one sample per pixel column) and the whole buffer is redrawn as a
+// connected line, oldest sample on the left, newest on the right —
+// an "infinite" scrolling strip chart, not a snapshot bar.
 
 function drawAudioMeter() {
   if (!audioConnected || !dd) return;
 
+  energyHistory.push(dd.energy);
+  if (energyHistory.length > METER_HISTORY_LENGTH) {
+    energyHistory.shift();
+  }
+
+  pitchHistory.push(dd.pitch);
+  if (pitchHistory.length > METER_HISTORY_LENGTH) {
+    pitchHistory.shift();
+  }
+
+  const meterX = 10;
+  const energyY = height - 88;
+  const pitchY = height - 46;
+
+  drawScrollingMeter(
+    meterX, energyY, METER_WIDTH, METER_HEIGHT,
+    energyHistory, color(0, 229, 255), "ENERGY"
+  );
+
+  drawScrollingMeter(
+    meterX, pitchY, METER_WIDTH, METER_HEIGHT,
+    pitchHistory, color(255, 176, 0), "PITCH"
+  );
+
   push();
   noStroke();
-
-  fill(0, 229, 255);
-
-  const energyHeight = dd.energy * 200;
-
-  rect(
-    10,
-    height - 10 - energyHeight,
-    20,
-    energyHeight
-  );
-
-
-  fill(255, 176, 0);
-
-  const pitchHeight = dd.pitch * 200;
-
-  rect(
-    40,
-    height - 10 - pitchHeight,
-    20,
-    pitchHeight
-  );
-
 
   if (millis() - lastBeatAt < BEAT_FLASH_MS) {
     fill(255, 45, 150);
 
     rect(
-      70,
-      height - 30,
+      meterX + METER_WIDTH + 10,
+      pitchY + (METER_HEIGHT - 20) / 2,
       20,
       20
     );
   }
+
+  pop();
+}
+
+
+// Draws one scrolling trace panel: dark backing box, a center
+// graticule line, the history plotted as a connected line, and a
+// small corner label. Display-only helper, no state of its own.
+function drawScrollingMeter(x, y, w, h, history, traceColor, label) {
+  push();
+
+  noStroke();
+  fill(0, 0, 0, 160);
+  rect(x, y, w, h);
+
+  stroke(51, 55, 63);
+  strokeWeight(1);
+  line(x, y + h / 2, x + w, y + h / 2);
+
+  noFill();
+  stroke(traceColor);
+  strokeWeight(1.5);
+  beginShape();
+  for (let i = 0; i < history.length; i++) {
+    const sampleX = x + w - (history.length - i) * (w / METER_HISTORY_LENGTH);
+    const sampleY = y + h - constrain(history[i], 0, 1) * h;
+    vertex(sampleX, sampleY);
+  }
+  endShape();
+
+  noStroke();
+  fill(traceColor);
+  textAlign(LEFT, TOP);
+  textSize(9);
+  text(label, x + 4, y + 2);
 
   pop();
 }
