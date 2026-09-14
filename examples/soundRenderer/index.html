@@ -17,13 +17,30 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/addons/p5.sound.min.js"></script>
   <script src="../../libs/DeeDeeLib.js"></script>
 
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
   <style>
+      :root {
+          --bg: #0b0d10;
+          --panel-bg: #15171c;
+          --panel-border: #33373f;
+          --text: #d7dbe0;
+          --text-dim: #7c828c;
+          --accent: #ffb000;
+          --accent-alt: #4fd1c5;
+      }
       html, body {
           margin: 0;
           padding: 0;
+          background: var(--bg);
+          color: var(--text);
+          font-family: 'Share Tech Mono', 'Courier New', monospace;
       }
       canvas {
           display: block;
+          border: 1px solid var(--panel-border);
       }
       #right-panels {
           position: fixed;
@@ -37,13 +54,17 @@
       .dom-panel {
           width: 220px;
           padding: 8px 10px;
-          background: rgba(255, 255, 255, 0.9);
-          border: 1px solid #ccc;
-          font-family: sans-serif;
+          background: var(--panel-bg);
+          border: 1px solid var(--panel-border);
+          font-family: 'Share Tech Mono', 'Courier New', monospace;
           font-size: 12px;
+          color: var(--text);
       }
       .dom-panel h4 {
           margin: 0 0 6px;
+          color: var(--accent);
+          text-transform: uppercase;
+          letter-spacing: 1px;
       }
       #audio-tuning-panel .tuning-row {
           display: flex;
@@ -53,10 +74,12 @@
       }
       #audio-tuning-panel .tuning-label {
           flex: 1;
+          color: var(--text-dim);
       }
       #audio-tuning-panel .tuning-value {
           width: 34px;
           text-align: right;
+          color: var(--accent-alt);
       }
       #audio-tuning-panel input[type="range"] {
           flex: 1;
@@ -71,12 +94,18 @@
           flex: 0 0 auto;
           min-width: 46px;
           font-weight: bold;
+          color: var(--accent);
+          background: #000;
+          border: 1px solid var(--panel-border);
+          text-align: center;
       }
       #keyboard-help-panel .help-label {
           flex: 1;
+          color: var(--text-dim);
       }
       #audio-io-panel p {
           margin: 0 0 8px;
+          color: var(--text-dim);
       }
       #audio-io-panel button,
       #audio-io-panel select {
@@ -84,12 +113,50 @@
           width: 100%;
           box-sizing: border-box;
           margin-bottom: 6px;
-          font-family: sans-serif;
+          font-family: 'Share Tech Mono', 'Courier New', monospace;
           font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          background: #1c1f26;
+          color: var(--accent);
+          border: 1px solid var(--panel-border);
+          padding: 6px 8px;
       }
       #audio-io-panel button:last-child,
       #audio-io-panel select:last-child {
           margin-bottom: 0;
+      }
+      #audio-io-panel button:hover:not(:disabled) {
+          border-color: var(--accent);
+      }
+      #audio-io-panel button:disabled,
+      #audio-io-panel select:disabled {
+          color: var(--text-dim);
+          border-color: var(--panel-border);
+          opacity: 0.6;
+      }
+      .dom-panel input[type="range"] {
+          -webkit-appearance: none;
+          appearance: none;
+          height: 3px;
+          background: var(--panel-border);
+      }
+      .dom-panel input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 10px;
+          height: 14px;
+          background: var(--accent);
+          border-radius: 1px;
+          cursor: pointer;
+      }
+      .dom-panel input[type="range"]::-moz-range-thumb {
+          width: 10px;
+          height: 14px;
+          background: var(--accent);
+          border: none;
+          border-radius: 1px;
+          cursor: pointer;
       }
   </style>
 </head>

@@ -242,7 +242,7 @@ function setup() {
 
   textAlign(CENTER);
   ellipseMode(CENTER);
-  fill(0);
+  fill(255, 176, 0); // amber, LCD-readout style
 
   lastPos = createVector(0, 0);
 
@@ -394,7 +394,7 @@ function keyReleased() {
 ////
 
 function drawConnected() {
-  background(255, 255, 0, 255);
+  background(32, 26, 10, 255); // warm dark amber tint
 
   text(
     "[" + getSimulatorString() + "] CONNECTED\nPreparing pen",
@@ -405,7 +405,7 @@ function drawConnected() {
 
 
 function drawDisconnected() {
-  background(255, 0, 0, 255);
+  background(32, 10, 10, 255); // dark red tint
 
   text(
     "[" + getSimulatorString() + "] DISCONNECTED\nClick to connect",
@@ -416,7 +416,7 @@ function drawDisconnected() {
 
 
 function drawReady() {
-  background(255, 255, 255, 255);
+  background(11, 13, 16, 255); // matches page background
   drawPen();
 }
 
@@ -425,10 +425,10 @@ function drawPen() {
   push();
 
   if (penIsDown) {
-    stroke(0, 255, 0, 255);
-    fill(0, 255, 0, 255);
+    stroke(60, 220, 130, 255);
+    fill(60, 220, 130, 255);
   } else {
-    stroke(255, 0, 0, 255);
+    stroke(255, 138, 61, 255);
     noFill();
   }
 
@@ -443,9 +443,9 @@ function drawPen() {
 }
 
 
-// Blue = energy
-// Orange = pitch
-// Pink = beat
+// Cyan = energy
+// Amber = pitch
+// Magenta = beat
 
 function drawAudioMeter() {
   if (!audioConnected || !dd) return;
@@ -453,7 +453,7 @@ function drawAudioMeter() {
   push();
   noStroke();
 
-  fill(0, 150, 255);
+  fill(0, 229, 255);
 
   const energyHeight = dd.energy * 200;
 
@@ -465,7 +465,7 @@ function drawAudioMeter() {
   );
 
 
-  fill(255, 150, 0);
+  fill(255, 176, 0);
 
   const pitchHeight = dd.pitch * 200;
 
@@ -478,7 +478,7 @@ function drawAudioMeter() {
 
 
   if (millis() - lastBeatAt < BEAT_FLASH_MS) {
-    fill(255, 0, 150);
+    fill(255, 45, 150);
 
     rect(
       70,
