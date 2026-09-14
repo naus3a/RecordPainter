@@ -37,6 +37,8 @@ let lastBeatPenTriggerAt = -Infinity;
 let beatCurrentY = MachineConfig.label.topY;
 let beatShiftMoving = false;
 
+let positionNeedsResync = false;
+
 let beatPenDown = false;
 let beatPenReleaseAt = 0;
 
@@ -198,28 +200,18 @@ function setupRemoteControl() {
     if (appState !== AppState.READY) return;
 
 
-    // iPhone START button:
-    // react only to press = 1,
-    // ignore release = 0.
-    if (msg.address === "/start" && value === 1) {
-      startBeatDrawing();
-      return;
-    }
 
-    // Same as the 'p' key.
-    if (msg.address === "/park") {
+    if (msg.address === "/park" && value === 1) {
       parkPen();
       return;
     }
 
-    // Same as the 'r' key.
-    if (msg.address === "/return") {
+    if (msg.address === "/return" && value === 1) {
       returnToStart();
       return;
     }
 
-    // Same as the 'h' key.
-    if (msg.address === "/home") {
+    if (msg.address === "/home" && value === 1) {
       goHome();
       return;
     }
@@ -650,6 +642,8 @@ function connectAxi() {
     appState = AppState.CONNECTED;
 
     console.log("CONNECTED");
+    await axi.ebb.clearStepPosition();
+    console.log("EBB POSITION ZEROED");
 
     axi.setSpeed(
       AudioMotionTuning.drawSpeedMmPerSec.value
@@ -908,14 +902,65 @@ function triggerBeatPen() {
   );
 }
 
+async function resyncAxiPosition() {
+  // Give the emergency stop a moment to settle.
+  await waitMs(100);
+
+  const actualPos =
+    await axi.currentPosition();
+
+  // Synchronise p5.axidraw's cached position
+  // with the actual EBB step position.
+  axi.lastCommandedPos = {
+    x: actualPos.x,
+    y: actualPos.y
+  };
+
+  axi.targetPos = {
+    x: actualPos.x,
+    y: actualPos.y
+  };
+
+  lastScreenPenPos =
+    paperToScreen(
+      actualPos.x,
+      actualPos.y
+    );
+
+  lastAudioTargetX = actualPos.x;
+  lastAudioTargetY = actualPos.y;
+
+  positionNeedsResync = false;
+
+  console.log(
+    "AXIDRAW POSITION RESYNCED:",
+    actualPos.x,
+    actualPos.y
+  );
+
+  return actualPos;
+}
 
 async function parkPen() {
+
+  if (positionNeedsResync) {
+    console.error(
+      "PARK BLOCKED — POSITION NOT SYNCHRONIZED"
+    );
+    return;
+  }
+
   console.log("PARKING...");
 
   appState = AppState.CONNECTED;
 
   await axi.penUp();
   penIsDown = false;
+
+  setTuningValue(
+    "drawSpeedMmPerSec",
+    25
+  );
 
   await axi.moveTo(
     MachineConfig.park.x,
@@ -1240,13 +1285,13 @@ async function stopTrack(track) {
 }
 
 async function safetyStopPreset() {
+
   if (!presetRunning) return;
 
-  console.warn("SAFETY STOP");
-
-  // This must happen BEFORE any await.
-  // It tells the sequencer not to continue to the next track.
+  positionNeedsResync = true;
   presetAbortRequested = true;
+
+  console.warn("SAFETY STOP");
 
   // Stop draw() from generating any further movement commands.
   appState = AppState.CONNECTED;
@@ -1271,6 +1316,16 @@ async function safetyStopPreset() {
   }
 
   try {
+    await resyncAxiPosition();
+  }
+  catch (err) {
+    console.error(
+      "POSITION RESYNC ERROR:",
+      err
+    );
+  }
+
+  try {
     // Raise pen immediately using the fast servo command.
     await fastPenUp();
   }
@@ -1289,7 +1344,16 @@ async function safetyStopPreset() {
     25
   );
 
-  appState = AppState.READY;
+  if (positionNeedsResync) {
+    appState = AppState.CONNECTED;
+
+    console.error(
+      "POSITION UNKNOWN — XY MOVEMENT BLOCKED"
+    );
+  }
+  else {
+    appState = AppState.READY;
+  }
 
   console.warn(
     "PRESET ABORTED — MACHINE STOPPED"
@@ -1388,7 +1452,7 @@ async function playPreset(presetId) {
       // Pause between tracks.
       // Skip pause after the final track.
       if (i < preset.tracks.length - 1) {
-        console.log("TRACK PAUSE: 5s");
+        console.log("TRACK PAUSE: 1s");
         const pauseCompleted =
           await waitPresetSeconds(1);
 
@@ -1397,7 +1461,7 @@ async function playPreset(presetId) {
         }
       }
 
-      await stopTrack(currentTrack);
+    
     }
 
     if (!presetAbortRequested) {
