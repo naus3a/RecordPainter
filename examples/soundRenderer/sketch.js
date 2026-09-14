@@ -221,6 +221,7 @@ function setup() {
 
   setupAudioUI();
   setupAudioTuningUI();
+  setupKeyboardHelpUI();
   setupRemoteControl();
 
   console.log("PRESETS LOADED:", Object.keys(presets || {}));
@@ -1558,7 +1559,7 @@ function updateAudioPenMotion() {
 
 function setupAudioTuningUI() {
   const panel =
-    createDiv().id('audio-tuning-panel');
+    createDiv().id('audio-tuning-panel').parent('right-panels');
 
   createElement(
     'h4',
@@ -1601,6 +1602,50 @@ function setupAudioTuningUI() {
         axi.setSpeed(cfg.value);
       }
     });
+  });
+}
+
+
+
+////
+//// keyboard shortcuts recap
+////
+
+// Static reference panel — keys are hardcoded here to match keyReleased().
+// Not derived from that function, so keep the two in sync by hand.
+const KeyboardShortcuts = [
+  { key: 'd', label: 'Start / stop drawing (D mode)' },
+  { key: 'b', label: 'Start / stop beat drawing (B mode)' },
+  { key: 'p', label: 'Park pen' },
+  { key: 'r', label: 'Return to start' },
+  { key: 'h', label: 'Go home' },
+  { key: '1', label: 'Run preset: Energy' },
+  { key: '2', label: 'Run preset: Ambient' },
+  { key: '⌫ / Del', label: 'Safety stop (during a preset)' },
+];
+
+function setupKeyboardHelpUI() {
+  const panel =
+    createDiv().id('keyboard-help-panel').parent('right-panels');
+
+  createElement(
+    'h4',
+    'Keyboard shortcuts'
+  ).parent(panel);
+
+  KeyboardShortcuts.forEach(shortcut => {
+    const row =
+      createDiv()
+        .addClass('help-row')
+        .parent(panel);
+
+    createSpan(shortcut.key)
+      .addClass('help-key')
+      .parent(row);
+
+    createSpan(shortcut.label)
+      .addClass('help-label')
+      .parent(row);
   });
 }
 
