@@ -1407,16 +1407,24 @@ async function playPreset(presetId) {
 ////
 
 function setupAudioUI() {
-  audioStatusP = createP('Audio: not connected');
+  const panel =
+    createDiv().id('audio-io-panel').addClass('dom-panel').parent('right-panels');
 
-  audioEnableButton = createButton('Enable Microphone');
+  createElement(
+    'h4',
+    'Audio input'
+  ).parent(panel);
+
+  audioStatusP = createP('Audio: not connected').parent(panel);
+
+  audioEnableButton = createButton('Enable Microphone').parent(panel);
   audioEnableButton.mousePressed(enableMicrophone);
 
-  audioDeviceSelect = createSelect();
+  audioDeviceSelect = createSelect().parent(panel);
   audioDeviceSelect.option('(enable microphone first)');
   audioDeviceSelect.attribute('disabled', '');
 
-  audioConnectButton = createButton('Connect Audio');
+  audioConnectButton = createButton('Connect Audio').parent(panel);
   audioConnectButton.attribute('disabled', '');
   audioConnectButton.mousePressed(connectAudio);
 }
@@ -1593,7 +1601,7 @@ function updateAudioPenMotion() {
 
 function setupAudioTuningUI() {
   const panel =
-    createDiv().id('audio-tuning-panel').parent('right-panels');
+    createDiv().id('audio-tuning-panel').addClass('dom-panel').parent('right-panels');
 
   createElement(
     'h4',
@@ -1660,7 +1668,7 @@ const KeyboardShortcuts = [
 
 function setupKeyboardHelpUI() {
   const panel =
-    createDiv().id('keyboard-help-panel').parent('right-panels');
+    createDiv().id('keyboard-help-panel').addClass('dom-panel').parent('right-panels');
 
   createElement(
     'h4',
