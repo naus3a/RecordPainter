@@ -1,0 +1,63 @@
+// Boundaries
+UP: X179 Y68
+DOWN: X179 Y110
+
+// PRESET1 "ENERGY"
+
+Track1: 
+Mode: B
+Start_Drawing: X179 Y68
+AxiDraw Speed: 25
+B beat min interval (ms): 180
+B max Y travel (mm): 15
+Duration: 30 sec
+
+Track2: 
+Mode: D
+Start_Drawing: X179 Y95
+AxiDraw Speed: 70
+Pitch Y amplitude (mm): 10
+Sample interval (ms): 120
+Beat X kick (mm): 0
+Beat X max offset (mm): 0
+X recenter decay: 0
+Duration: 30 sec
+
+Track3: 
+Mode: D
+Start_Drawing: X179 Y105
+AxiDraw Speed: 50
+Pitch Y amplitude (mm): 2
+Sample interval (ms): 180
+Beat X kick (mm): 2
+Beat X max offset (mm): 4
+X recenter decay: 0.2
+Duration: 30 sec
+
+
+
+// PRESET2 "AMBIENT"
+
+Track1: 
+Mode: D
+Start_Drawing: X179 Y80
+AxiDraw Speed: 10
+Pitch Y amplitude (mm): 20
+Sample interval (ms): 250
+Beat X kick (mm): 0
+Beat X max offset (mm): 0
+X recenter decay: 0
+Duration: 45 sec
+
+
+Track2: 
+Mode: D
+Start_Drawing: X179 Y100
+AxiDraw Speed: 25
+Pitch Y amplitude (mm): 5
+Sample interval (ms): 200
+Beat X kick (mm): 5
+Beat X max offset (mm): 10
+X recenter decay: 0.6
+Duration: 45 sec
+

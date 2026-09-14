@@ -1,0 +1,91 @@
+{
+    "energy": {
+        "name": "Energy",
+        "tracks": [
+            {
+                "mode": "B",
+                "durationSec": 10,
+                "start": {
+                    "x": 179,
+                    "y": 68
+                },
+                "params": {
+                    "speedMmPerSec": 25,
+                    "beatMinIntervalMs": 180,
+                    "maxYTravelMm": 15,
+                    "yStepMm": 0.2
+                }
+            },
+            {
+                "mode": "D",
+                "durationSec": 10,
+                "start": {
+                    "x": 179,
+                    "y": 95
+                },
+                "params": {
+                    "speedMmPerSec": 70,
+                    "pitchYAmplitudeMm": 10,
+                    "sampleIntervalMs": 120,
+                    "beatKickMm": 0,
+                    "xMaxMm": 0,
+                    "xRecenterDecay": 0
+                }
+            },
+            {
+                "mode": "D",
+                "durationSec": 10,
+                "start": {
+                    "x": 179,
+                    "y": 105
+                },
+                "params": {
+                    "speedMmPerSec": 50,
+                    "pitchYAmplitudeMm": 2,
+                    "sampleIntervalMs": 180,
+                    "beatKickMm": 2,
+                    "xMaxMm": 4,
+                    "xRecenterDecay": 0.2
+                }
+            }
+        ]
+    },
+
+    "ambient": {
+        "name": "Ambient",
+        "tracks": [
+            {
+                "mode": "D",
+                "durationSec": 45,
+                "start": {
+                    "x": 179,
+                    "y": 89
+                },
+                "params": {
+                    "speedMmPerSec": 10,
+                    "pitchYAmplitudeMm": 20,
+                    "sampleIntervalMs": 250,
+                    "beatKickMm": 0,
+                    "xMaxMm": 0,
+                    "xRecenterDecay": 0
+                }
+            },
+            {
+                "mode": "D",
+                "durationSec": 45,
+                "start": {
+                    "x": 179,
+                    "y": 103
+                },
+                "params": {
+                    "speedMmPerSec": 25,
+                    "pitchYAmplitudeMm": 5,
+                    "sampleIntervalMs": 200,
+                    "beatKickMm": 5,
+                    "xMaxMm": 8,
+                    "xRecenterDecay": 0.6
+                }
+            }
+        ]
+    }
+}
