@@ -180,15 +180,49 @@ function setupRemoteControl() {
       msg.args?.[0]?.value;
 
 
+    // Same gating as keyReleased(): while a preset is running the
+    // sequencer owns the machine, and everything below is otherwise
+    // READY-only, exactly like its keyboard equivalent.
+    if (presetRunning) return;
+    if (appState !== AppState.READY) return;
+
+
     // iPhone START button:
     // react only to press = 1,
     // ignore release = 0.
-    if (
-      msg.address === "/start" &&
-      value === 1 &&
-      appState === AppState.READY
-    ) {
+    if (msg.address === "/start" && value === 1) {
       startBeatDrawing();
+      return;
+    }
+
+    // Same as the 'p' key.
+    if (msg.address === "/park") {
+      parkPen();
+      return;
+    }
+
+    // Same as the 'r' key.
+    if (msg.address === "/return") {
+      returnToStart();
+      return;
+    }
+
+    // Same as the 'h' key.
+    if (msg.address === "/home") {
+      goHome();
+      return;
+    }
+
+    // Same as the '1'/'2' keys. Any other value is ignored.
+    if (msg.address === "/preset") {
+      if (value === 1) {
+        playPreset("energy");
+      } else if (value === 2) {
+        playPreset("ambient");
+      } else {
+        console.log("REMOTE: /preset ignored value", value);
+      }
+      return;
     }
   };
 }
